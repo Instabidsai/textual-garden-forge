@@ -1,26 +1,30 @@
 'use client'
 
 import { createDirectSupabaseClient, validateSlackAuth, getOAuthRedirectUrl } from '@/lib/supabase/auth-fix'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import dynamic from 'next/dynamic'
 
-export default function LoginPage() {
+// Create a separate component for the login form that uses useSearchParams
+function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [authStatus, setAuthStatus] = useState<any>(null)
   const router = useRouter()
-  const searchParams = useSearchParams()
-
+  
+  // We can safely use URLSearchParams in client components
   useEffect(() => {
-    // Check for error in URL params
-    const urlError = searchParams.get('error')
-    if (urlError) {
-      setError(decodeURIComponent(urlError))
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const urlError = params.get('error')
+      if (urlError) {
+        setError(decodeURIComponent(urlError))
+      }
     }
     
     // Validate auth on mount
     validateSlackAuth().then(setAuthStatus)
-  }, [searchParams])
+  }, [])
 
   const signInWithSlack = async () => {
     try {
@@ -118,5 +122,26 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Loading component to show while the form is loading
+function LoginLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-white mx-auto"></div>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+      </div>
+    </div>
+  )
+}
+
+// Main page component with Suspense boundary
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginLoading />}>
+      <LoginForm />
+    </Suspense>
   )
 }
