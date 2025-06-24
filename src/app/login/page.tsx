@@ -1,22 +1,18 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
+import { createDirectSupabaseClient, validateSlackAuth } from '@/lib/supabase/auth-fix'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [supabaseUrl, setSupabaseUrl] = useState<string>('')
+  const [authStatus, setAuthStatus] = useState<any>(null)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
-    // Debug: Log the Supabase URL
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'NOT SET'
-    console.log('Supabase URL:', url)
-    console.log('Supabase Anon Key:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET')
-    setSupabaseUrl(url)
+    // Validate auth on mount
+    validateSlackAuth().then(setAuthStatus)
   }, [])
 
   const signInWithSlack = async () => {
@@ -24,18 +20,36 @@ export default function LoginPage() {
       setLoading(true)
       setError(null)
       
-      console.log('Attempting to sign in with Slack...')
-      console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
+      // Use direct Supabase client
+      const supabase = createDirectSupabaseClient()
       
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log('Attempting to sign in with Slack...')
+      console.log('Auth status:', authStatus)
+      
+      // Construct the OAuth URL manually as a fallback
+      const redirectTo = `${window.location.origin}/auth/callback`
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'slack',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo,
+          skipBrowserRedirect: false,
+          scopes: 'openid profile email',
         },
       })
       
       if (error) {
         console.error('Supabase error:', error)
+        
+        // If standard method fails, try manual redirect
+        if (error.message.includes('unsupported provider')) {
+          console.log('Trying manual OAuth redirect...')
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+          const oauthUrl = `${supabaseUrl}/auth/v1/authorize?provider=slack&redirect_to=${encodeURIComponent(redirectTo)}`
+          window.location.href = oauthUrl
+          return
+        }
+        
         throw error
       }
     } catch (error) {
@@ -56,9 +70,14 @@ export default function LoginPage() {
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             Your team&apos;s knowledge base powered by AI
           </p>
-          <p className="mt-2 text-center text-xs text-gray-500 dark:text-gray-500">
-            Debug: Supabase URL: {supabaseUrl}
-          </p>
+          
+          {authStatus && (
+            <div className="mt-4 text-center text-xs text-gray-500 dark:text-gray-500 space-y-1">
+              <p>Supabase URL: {process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Configured' : 'Missing'}</p>
+              <p>Slack Provider: {authStatus.slackEnabled ? '✅ Enabled' : '❌ Disabled'}</p>
+              <p>Available Providers: {authStatus.providers?.join(', ') || 'None'}</p>
+            </div>
+          )}
         </div>
         
         <div className="mt-8 space-y-6">
@@ -84,6 +103,16 @@ export default function LoginPage() {
               </>
             )}
           </button>
+          
+          <div className="mt-4 text-center">
+            <a 
+              href="/api/test-auth" 
+              target="_blank"
+              className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              Test Auth Configuration →
+            </a>
+          </div>
         </div>
       </div>
     </div>
