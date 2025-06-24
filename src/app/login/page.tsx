@@ -23,33 +23,22 @@ export default function LoginPage() {
       // Use direct Supabase client
       const supabase = createDirectSupabaseClient()
       
-      console.log('Attempting to sign in with Slack...')
+      console.log('Attempting to sign in with Slack OIDC...')
       console.log('Auth status:', authStatus)
       
-      // Construct the OAuth URL manually as a fallback
       const redirectTo = `${window.location.origin}/auth/callback`
       
+      // Use slack_oidc instead of slack
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'slack',
+        provider: 'slack_oidc', // Changed from 'slack' to 'slack_oidc'
         options: {
           redirectTo,
           skipBrowserRedirect: false,
-          scopes: 'openid profile email',
         },
       })
       
       if (error) {
         console.error('Supabase error:', error)
-        
-        // If standard method fails, try manual redirect
-        if (error.message.includes('unsupported provider')) {
-          console.log('Trying manual OAuth redirect...')
-          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-          const oauthUrl = `${supabaseUrl}/auth/v1/authorize?provider=slack&redirect_to=${encodeURIComponent(redirectTo)}`
-          window.location.href = oauthUrl
-          return
-        }
-        
         throw error
       }
     } catch (error) {
@@ -104,14 +93,17 @@ export default function LoginPage() {
             )}
           </button>
           
-          <div className="mt-4 text-center">
+          <div className="mt-4 text-center space-y-2">
             <a 
-              href="/api/test-auth" 
+              href="/api/auth-diagnostics" 
               target="_blank"
               className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
             >
-              Test Auth Configuration →
+              View Auth Configuration →
             </a>
+            <p className="text-xs text-gray-500">
+              Using Slack OIDC provider
+            </p>
           </div>
         </div>
       </div>
