@@ -4,8 +4,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Page } from '@/types'
-import RichTextEditor from '@/components/rich-text-editor'
+import dynamic from 'next/dynamic'
 import { debounce } from '@/lib/utils'
+
+// Dynamically import the RichTextEditor to avoid SSR issues
+const RichTextEditor = dynamic(() => import('@/components/rich-text-editor'), {
+  ssr: false,
+  loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-96 rounded"></div>
+})
 
 export default function PageEditor({ page: initialPage }: { page: Page }) {
   const [page, setPage] = useState<Page>(initialPage)
@@ -13,6 +19,7 @@ export default function PageEditor({ page: initialPage }: { page: Page }) {
   const router = useRouter()
   const supabase = createClient()
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const savePage = useCallback(
     debounce(async (updates: Partial<Page>) => {
       setSaving(true)
