@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { DashboardClient } from './dashboard-client'
+import { SignOutButton } from './sign-out-button'
 
 export default async function DashboardPage() {
   const supabase = createClient()
@@ -31,17 +32,7 @@ export default async function DashboardPage() {
           <p className="text-gray-600 dark:text-gray-400 mt-2">
             Please contact your administrator.
           </p>
-          <button
-            onClick={async () => {
-              'use server'
-              const supabase = createClient()
-              await supabase.auth.signOut()
-              redirect('/login')
-            }}
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Sign Out
-          </button>
+          <SignOutButton />
         </div>
       </div>
     )
