@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation'
-import { createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import PageEditor from './page-editor'
 
 export default async function PagePage({ params }: { params: { id: string } }) {
-  const supabase = createServerClient()
+  const supabase = createClient()
   
   const { data: page } = await supabase
     .from('pages')

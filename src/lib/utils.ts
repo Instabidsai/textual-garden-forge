@@ -9,23 +9,21 @@ export function debounce<T extends (...args: any[]) => any>(
 ): DebouncedFunction<T> {
   let timeout: NodeJS.Timeout | null = null
 
-  const debounced = function (...args: Parameters<T>) {
+  const debounced = ((...args: Parameters<T>) => {
     if (timeout) {
       clearTimeout(timeout)
     }
     timeout = setTimeout(() => {
       func(...args)
     }, wait)
-  } as T
+  }) as DebouncedFunction<T>
 
-  const debouncedWithCancel = debounced as DebouncedFunction<T>
-  
-  debouncedWithCancel.cancel = function () {
+  debounced.cancel = () => {
     if (timeout) {
       clearTimeout(timeout)
       timeout = null
     }
   }
 
-  return debouncedWithCancel
+  return debounced
 }
