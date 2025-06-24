@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { Providers } from '@/components/providers'
+import Providers from '@/components/providers'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Textual Garden Forge',
-  description: 'A Notion-inspired knowledge base with Slack authentication',
+  description: 'AI-powered team knowledge base',
 }
 
 export default function RootLayout({

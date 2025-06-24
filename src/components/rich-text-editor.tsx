@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { $getRoot, $getSelection, EditorState } from 'lexical'
-import { $createParagraphNode, $createHeadingNode, $createQuoteNode } from 'lexical'
+import { $getRoot, $getSelection, EditorState, $createParagraphNode } from 'lexical'
+import { $createHeadingNode, HeadingNode, QuoteNode, $createQuoteNode } from '@lexical/rich-text'
 import {
   InitialConfigType,
   LexicalComposer,
@@ -12,7 +12,6 @@ import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 import { ListNode, ListItemNode } from '@lexical/list'
 import { LinkNode, AutoLinkNode } from '@lexical/link'
 import { CodeNode, CodeHighlightNode } from '@lexical/code'
@@ -103,7 +102,20 @@ export default function RichTextEditor({ initialContent, onChange }: RichTextEdi
   const handleChange = (editorState: EditorState) => {
     editorState.read(() => {
       const root = $getRoot()
-      const content = root.toJSON()
+      const content = {
+        root: {
+          children: root.getChildren().map(child => ({
+            type: child.getType(),
+            // @ts-ignore
+            ...(child.exportJSON ? child.exportJSON() : {})
+          })),
+          direction: root.getDirection(),
+          format: root.getFormat(),
+          indent: root.getIndent(),
+          type: root.getType(),
+          version: 1
+        }
+      }
       onChange?.(content)
     })
   }
