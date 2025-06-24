@@ -2,18 +2,30 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [supabaseUrl, setSupabaseUrl] = useState<string>('')
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    // Debug: Log the Supabase URL
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'NOT SET'
+    console.log('Supabase URL:', url)
+    console.log('Supabase Anon Key:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET')
+    setSupabaseUrl(url)
+  }, [])
 
   const signInWithSlack = async () => {
     try {
       setLoading(true)
       setError(null)
+      
+      console.log('Attempting to sign in with Slack...')
+      console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'slack',
@@ -22,8 +34,12 @@ export default function LoginPage() {
         },
       })
       
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
     } catch (error) {
+      console.error('Sign in error:', error)
       setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
       setLoading(false)
@@ -39,6 +55,9 @@ export default function LoginPage() {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             Your team&apos;s knowledge base powered by AI
+          </p>
+          <p className="mt-2 text-center text-xs text-gray-500 dark:text-gray-500">
+            Debug: Supabase URL: {supabaseUrl}
           </p>
         </div>
         
