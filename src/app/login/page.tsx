@@ -1,19 +1,27 @@
 'use client'
 
 import { createDirectSupabaseClient, validateSlackAuth } from '@/lib/supabase/auth-fix'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { OAUTH_REDIRECT_URL } from '@/lib/auth-constants'
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [authStatus, setAuthStatus] = useState<any>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
+    // Check for error in URL params
+    const urlError = searchParams.get('error')
+    if (urlError) {
+      setError(decodeURIComponent(urlError))
+    }
+    
     // Validate auth on mount
     validateSlackAuth().then(setAuthStatus)
-  }, [])
+  }, [searchParams])
 
   const signInWithSlack = async () => {
     try {
@@ -25,17 +33,13 @@ export default function LoginPage() {
       
       console.log('Attempting to sign in with Slack OIDC...')
       console.log('Auth status:', authStatus)
-      
-      // HARDCODE THE PRODUCTION URL - NO MORE LOCALHOST ISSUES
-      const redirectTo = 'https://hub.instabids.ai/auth/callback'
-      
-      console.log('Using redirect URL:', redirectTo)
+      console.log('Using redirect URL:', OAUTH_REDIRECT_URL)
       
       // Use slack_oidc instead of slack
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'slack_oidc',
         options: {
-          redirectTo,
+          redirectTo: OAUTH_REDIRECT_URL,
           skipBrowserRedirect: false,
         },
       })
@@ -68,6 +72,7 @@ export default function LoginPage() {
               <p>Supabase URL: {process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Configured' : 'Missing'}</p>
               <p>Slack Provider: {authStatus.slackEnabled ? '✅ Enabled' : '❌ Disabled'}</p>
               <p>Available Providers: {authStatus.providers?.join(', ') || 'None'}</p>
+              <p className="text-orange-500">Redirect URL: {OAUTH_REDIRECT_URL}</p>
             </div>
           )}
         </div>
