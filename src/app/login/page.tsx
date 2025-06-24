@@ -26,11 +26,14 @@ export default function LoginPage() {
       console.log('Attempting to sign in with Slack OIDC...')
       console.log('Auth status:', authStatus)
       
-      const redirectTo = `${window.location.origin}/auth/callback`
+      // HARDCODE THE PRODUCTION URL - NO MORE LOCALHOST ISSUES
+      const redirectTo = 'https://hub.instabids.ai/auth/callback'
+      
+      console.log('Using redirect URL:', redirectTo)
       
       // Use slack_oidc instead of slack
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'slack_oidc', // Changed from 'slack' to 'slack_oidc'
+        provider: 'slack_oidc',
         options: {
           redirectTo,
           skipBrowserRedirect: false,
