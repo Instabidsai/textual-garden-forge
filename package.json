@@ -12,6 +12,7 @@
     "@lexical/react": "^0.12.2",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.45.0",
+    "@supabase/ssr": "^0.5.2",
     "lexical": "^0.12.2",
     "lucide-react": "^0.263.1",
     "next": "14.2.3",

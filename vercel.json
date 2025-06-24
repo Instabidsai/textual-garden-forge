@@ -1,0 +1,9 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://liaafawutjhfqvqtqtpm.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpYWFmYXd1dGpoZnF2cXRxdHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3NDI5NTYsImV4cCI6MjA2NjMxODk1Nn0.qUBCrMdTIKUSmSIPhLVOBNycYx8dOAUZZEPv9HO32-g"
+  }
+}
