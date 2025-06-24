@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+const PRODUCTION_URL = 'https://hub.instabids.ai'
+
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const error = requestUrl.searchParams.get('error')
   const errorDescription = requestUrl.searchParams.get('error_description')
-  
-  // Always redirect to production URL
-  const origin = 'https://hub.instabids.ai'
   
   console.log('Auth callback received:', { 
     code: code ? 'present' : 'missing', 
@@ -19,7 +18,7 @@ export async function GET(request: Request) {
 
   if (error) {
     console.error('OAuth error:', error, errorDescription)
-    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(errorDescription || error)}`)
+    return NextResponse.redirect(`${PRODUCTION_URL}/login?error=${encodeURIComponent(errorDescription || error)}`)
   }
 
   if (code) {
@@ -29,17 +28,17 @@ export async function GET(request: Request) {
       
       if (exchangeError) {
         console.error('Code exchange error:', exchangeError)
-        return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(exchangeError.message)}`)
+        return NextResponse.redirect(`${PRODUCTION_URL}/login?error=${encodeURIComponent(exchangeError.message)}`)
       }
       
       // Success - redirect to dashboard
-      return NextResponse.redirect(`${origin}/dashboard`)
+      return NextResponse.redirect(`${PRODUCTION_URL}/dashboard`)
     } catch (err) {
       console.error('Unexpected error:', err)
-      return NextResponse.redirect(`${origin}/login?error=Authentication%20failed`)
+      return NextResponse.redirect(`${PRODUCTION_URL}/login?error=Authentication%20failed`)
     }
   }
 
   // No code or error - redirect to login
-  return NextResponse.redirect(`${origin}/login?error=No%20authorization%20code%20received`)
+  return NextResponse.redirect(`${PRODUCTION_URL}/login?error=No%20authorization%20code%20received`)
 }

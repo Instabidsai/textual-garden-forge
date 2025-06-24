@@ -1,9 +1,8 @@
 'use client'
 
-import { createDirectSupabaseClient, validateSlackAuth } from '@/lib/supabase/auth-fix'
+import { createDirectSupabaseClient, validateSlackAuth, getOAuthRedirectUrl } from '@/lib/supabase/auth-fix'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { OAUTH_REDIRECT_URL } from '@/lib/auth-constants'
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -28,19 +27,22 @@ export default function LoginPage() {
       setLoading(true)
       setError(null)
       
-      // Use direct Supabase client
       const supabase = createDirectSupabaseClient()
+      const redirectTo = getOAuthRedirectUrl() // Using the helper function instead of window.location.origin
       
       console.log('Attempting to sign in with Slack OIDC...')
       console.log('Auth status:', authStatus)
-      console.log('Using redirect URL:', OAUTH_REDIRECT_URL)
+      console.log('Using redirect URL:', redirectTo)
       
-      // Use slack_oidc instead of slack
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'slack_oidc',
         options: {
-          redirectTo: OAUTH_REDIRECT_URL,
+          redirectTo,
           skipBrowserRedirect: false,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         },
       })
       
@@ -72,7 +74,7 @@ export default function LoginPage() {
               <p>Supabase URL: {process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Configured' : 'Missing'}</p>
               <p>Slack Provider: {authStatus.slackEnabled ? '✅ Enabled' : '❌ Disabled'}</p>
               <p>Available Providers: {authStatus.providers?.join(', ') || 'None'}</p>
-              <p className="text-orange-500">Redirect URL: {OAUTH_REDIRECT_URL}</p>
+              <p className="text-orange-500">Redirect URL: {getOAuthRedirectUrl()}</p>
             </div>
           )}
         </div>

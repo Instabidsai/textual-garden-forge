@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
+// Force production URL for OAuth redirects
+const PRODUCTION_URL = 'https://hub.instabids.ai'
+
 // Create a direct Supabase client to bypass Next.js server-side issues
 export const createDirectSupabaseClient = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -18,6 +21,12 @@ export const createDirectSupabaseClient = () => {
       storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     },
   })
+}
+
+// Helper to get OAuth redirect URL - ALWAYS returns production URL
+export const getOAuthRedirectUrl = () => {
+  // Always use production URL, regardless of where we're running
+  return `${PRODUCTION_URL}/auth/callback`
 }
 
 // Helper to validate Slack OAuth configuration
@@ -48,15 +57,17 @@ export const validateSlackAuth = async () => {
     
     return {
       providers: Object.keys(settings.external || {}).filter(key => settings.external[key]),
-      slackEnabled: slackOidcEnabled, // Check slack_oidc instead of slack
-      error: null
+      slackEnabled: slackOidcEnabled,
+      error: null,
+      productionUrl: PRODUCTION_URL
     }
   } catch (error) {
     console.error('Slack auth validation error:', error)
     return {
       providers: [],
       slackEnabled: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
+      productionUrl: PRODUCTION_URL
     }
   }
 }
