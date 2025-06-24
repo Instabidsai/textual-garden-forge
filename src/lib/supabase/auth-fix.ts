@@ -43,9 +43,12 @@ export const validateSlackAuth = async () => {
     const settings = await response.json()
     console.log('Auth settings:', settings)
     
+    // Check for slack_oidc instead of slack
+    const slackOidcEnabled = settings.external?.slack_oidc || false
+    
     return {
-      providers: settings.external_providers || [],
-      slackEnabled: settings.external_providers?.includes('slack') || false,
+      providers: Object.keys(settings.external || {}).filter(key => settings.external[key]),
+      slackEnabled: slackOidcEnabled, // Check slack_oidc instead of slack
       error: null
     }
   } catch (error) {
