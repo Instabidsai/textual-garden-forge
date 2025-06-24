@@ -6,10 +6,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "pre-deploy": "node scripts/lint-check.js"
   },
   "dependencies": {
     "@lexical/react": "^0.12.2",
+    "@lexical/rich-text": "^0.12.2",
+    "@lexical/list": "^0.12.2",
+    "@lexical/link": "^0.12.2",
+    "@lexical/code": "^0.12.2",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.45.0",
     "@supabase/ssr": "^0.5.2",
