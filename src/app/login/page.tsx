@@ -38,7 +38,7 @@ export default function LoginPage() {
             Welcome to Textual Garden Forge
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Your team's knowledge base powered by AI
+            Your team&apos;s knowledge base powered by AI
           </p>
         </div>
         

@@ -1,123 +1,96 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, Save, Trash2 } from 'lucide-react'
-import type { Database } from '@/types/database'
+import type { Page } from '@/types'
+import RichTextEditor from '@/components/rich-text-editor'
+import { debounce } from '@/lib/utils'
 
-type Page = Database['public']['Tables']['pages']['Row']
-
-interface PageEditorProps {
-  page: Page
-}
-
-export function PageEditor({ page: initialPage }: PageEditorProps) {
-  const [page, setPage] = useState(initialPage)
-  const [title, setTitle] = useState(page.title)
-  const [content, setContent] = useState(page.content?.text || '')
+export default function PageEditor({ page: initialPage }: { page: Page }) {
+  const [page, setPage] = useState<Page>(initialPage)
   const [saving, setSaving] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const supabase = createClient()
   const router = useRouter()
+  const supabase = createClient()
 
-  // Auto-save
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (title !== page.title || content !== page.content?.text) {
-        savePage()
-      }
-    }, 1000)
-
-    return () => clearTimeout(timeoutId)
-  }, [title, content])
-
-  const savePage = async () => {
-    setSaving(true)
-    try {
-      const { error } = await supabase
+  const savePage = useCallback(
+    debounce(async (updates: Partial<Page>) => {
+      setSaving(true)
+      await supabase
         .from('pages')
-        .update({
-          title,
-          content: { text: content },
-          updated_at: new Date().toISOString()
-        })
+        .update(updates)
         .eq('id', page.id)
-
-      if (error) throw error
-      
-      setPage({ ...page, title, content: { text: content } })
-    } catch (error) {
-      console.error('Error saving page:', error)
-    } finally {
       setSaving(false)
+    }, 1000),
+    [page.id]
+  )
+
+  useEffect(() => {
+    return () => {
+      savePage.cancel()
     }
+  }, [savePage])
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value
+    setPage(prev => ({ ...prev, title: newTitle }))
+    savePage({ title: newTitle })
   }
 
-  const deletePage = async () => {
-    if (!confirm('Are you sure you want to delete this page?')) return
-    
-    setDeleting(true)
-    try {
-      const { error } = await supabase
+  const handleContentChange = (content: any) => {
+    setPage(prev => ({ ...prev, content }))
+    savePage({ content })
+  }
+
+  const handleDelete = async () => {
+    if (confirm('Are you sure you want to delete this page?')) {
+      await supabase
         .from('pages')
         .delete()
         .eq('id', page.id)
-
-      if (error) throw error
-      
       router.push('/dashboard')
-    } catch (error) {
-      console.error('Error deleting page:', error)
-    } finally {
-      setDeleting(false)
     }
   }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 shadow">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
             <button
               onClick={() => router.push('/dashboard')}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              ← Back to Dashboard
             </button>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-4">
               {saving && (
                 <span className="text-sm text-gray-500 dark:text-gray-400">
                   Saving...
                 </span>
               )}
+              <button
+                onClick={handleDelete}
+                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+              >
+                Delete
+              </button>
             </div>
           </div>
-          
-          <button
-            onClick={deletePage}
-            disabled={deleting}
-            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md disabled:opacity-50"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <input
           type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Untitled"
+          value={page.title}
+          onChange={handleTitleChange}
           className="w-full text-4xl font-bold bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 mb-8"
+          placeholder="Untitled"
         />
-        
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Start typing..."
-          className="w-full min-h-[500px] text-lg bg-transparent border-none outline-none resize-none text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-600"
+        <RichTextEditor
+          initialContent={page.content}
+          onChange={handleContentChange}
         />
       </main>
     </div>

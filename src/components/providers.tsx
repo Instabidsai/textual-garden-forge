@@ -1,7 +1,8 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+import { useEffect, createContext, useContext, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 
 type AuthContextType = {
@@ -14,32 +15,34 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
 })
 
-export function useAuth() {
-  return useContext(AuthContext)
-}
+export const useAuth = () => useContext(AuthContext)
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export default function Providers({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
-    const getUser = async () => {
+    const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
       setLoading(false)
     }
 
-    getUser()
+    checkUser()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null)
+      if (event === 'SIGNED_OUT') {
+        router.push('/login')
       }
-    )
+    })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [router, supabase.auth])
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
